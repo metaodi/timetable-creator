@@ -1,0 +1,153 @@
+/*
+ * Druckausgabe (A4 quer). Der Vorschau-Modus (.app--preview) bildet dieselbe
+ * Darstellung im Browser nach, damit auf dem Handy vor dem Druckdialog sichtbar
+ * ist, was auf dem Blatt landet.
+ */
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+/*
+ * Papieransicht am Bildschirm. Bewusst auf `screen` begrenzt: sonst würden
+ * diese Regeln beim Drucken aus der Vorschau heraus die Druckregeln
+ * überstimmen (höhere Spezifität) und der Plan bräuchte zwei Seiten.
+ */
+@media screen {
+  .app--preview .app__body {
+    padding: 1rem;
+    justify-content: center;
+  }
+
+  .app--preview .sheet {
+    width: 277mm; /* A4 quer abzüglich Seitenränder */
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    box-shadow: 0 2px 12px rgb(15 23 42 / 20%);
+    background: #fff;
+  }
+
+  .app--preview .plan-header__title {
+    font-size: 1.3rem;
+  }
+
+  .app--preview .grid-cell,
+  .app--preview .grid-cell__button {
+    min-height: 2.6rem;
+    height: 2.6rem;
+  }
+}
+
+/* -------------------------------------------------------------------- Druck */
+
+@media print {
+  html,
+  body {
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Toolbar, Palette, Dialoge und Hinweise gehören nicht aufs Blatt. */
+  .no-print {
+    display: none !important;
+  }
+
+  .app,
+  .app__body {
+    display: block;
+    padding: 0;
+    margin: 0;
+    min-height: 0;
+  }
+
+  .sheet {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  /* Farbflächen der Lektionen und graue Zellen sollen mitgedruckt werden. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .plan-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .plan-header__title {
+    font-size: 16pt;
+  }
+
+  .plan-header__subtitle {
+    font-size: 9pt;
+  }
+
+  .timetable,
+  .legend__table {
+    font-size: 9pt;
+    /* Auf dem Blatt gibt die Seitenbreite das Mass vor, nicht der Bildschirm. */
+    min-width: 0;
+  }
+
+  .timetable thead th,
+  .timetable__time-head,
+  .timetable__time {
+    font-size: 9pt;
+  }
+
+  .grid-cell,
+  .grid-cell__button {
+    height: auto;
+    min-height: 10mm;
+  }
+
+  .chip__emoji {
+    font-size: 14pt;
+  }
+
+  .chip__text {
+    font-size: 9pt;
+  }
+
+  .chip__note {
+    font-size: 7.5pt;
+  }
+
+  .legend {
+    margin-top: 4mm;
+  }
+
+  .legend__title {
+    font-size: 11pt;
+    margin-bottom: 1mm;
+  }
+
+  .legend__table th,
+  .legend__table td {
+    padding: 0.5mm 1.5mm;
+  }
+
+  /* Zeilen und die Legende nicht mitten im Element umbrechen. */
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+
+  .legend {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}
