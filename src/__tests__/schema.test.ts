@@ -36,6 +36,49 @@ describe('parseConfig', () => {
     if (result.ok) expect(Object.keys(result.config.cells)).toEqual(['r1|d1']);
   });
 
+  it('liest eine geteilte Zelle (1./2. Semester)', () => {
+    const result = parseConfig({
+      days: [{ id: 'd1', label: 'Montag' }],
+      rows: [{ kind: 'lesson', id: 'r1', start: '08:00', end: '08:45' }],
+      lessonTypes: [
+        { id: 't1', abbreviation: 'A', name: 'A', display: 'text' },
+        { id: 't2', abbreviation: 'B', name: 'B', display: 'text' },
+      ],
+      cells: {
+        'r1|d1': {
+          lessonTypeId: 't1',
+          split: true,
+          secondLessonTypeId: 't2',
+          secondNote: 'Halle 2',
+        },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config.cells['r1|d1']).toEqual({
+        lessonTypeId: 't1',
+        split: true,
+        secondLessonTypeId: 't2',
+        secondNote: 'Halle 2',
+      });
+    }
+  });
+
+  it('verwirft eine unbekannte Lektionsart in der zweiten Hälfte', () => {
+    const result = parseConfig({
+      days: [{ id: 'd1', label: 'Montag' }],
+      rows: [{ kind: 'lesson', id: 'r1', start: '08:00', end: '08:45' }],
+      lessonTypes: [{ id: 't1', abbreviation: 'A', name: 'A', display: 'text' }],
+      cells: {
+        'r1|d1': { split: true, secondLessonTypeId: 'unbekannt' },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config.cells['r1|d1']).toEqual({ split: true });
+    }
+  });
+
   it('lässt keine externen Bild-URLs zu', () => {
     const result = parseConfig({
       meta: { title: 'T', logoDataUrl: 'https://example.invalid/logo.png' },

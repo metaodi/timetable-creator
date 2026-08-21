@@ -32,6 +32,10 @@ export type Action =
   | { type: 'setCellNote'; target: CellRef; note: string }
   | { type: 'setCellBlocked'; target: CellRef; blocked: boolean }
   | { type: 'setCellSpan'; target: CellRef; span: number }
+  | { type: 'setCellSplit'; target: CellRef; split: boolean }
+  | { type: 'placeLessonSecond'; target: CellRef; lessonTypeId: string }
+  | { type: 'clearCellSecond'; target: CellRef }
+  | { type: 'setCellNoteSecond'; target: CellRef; note: string }
   // Kopfbereich
   | { type: 'setMeta'; patch: Partial<TimetableConfig['meta']> }
   | { type: 'setPlanName'; name: string }
@@ -68,7 +72,10 @@ function isEmptyCell(cell: Cell): boolean {
     cell.lessonTypeId === undefined &&
     cell.note === undefined &&
     cell.blocked !== true &&
-    (cell.daySpan === undefined || cell.daySpan <= 1)
+    (cell.daySpan === undefined || cell.daySpan <= 1) &&
+    cell.split !== true &&
+    cell.secondLessonTypeId === undefined &&
+    cell.secondNote === undefined
   );
 }
 
@@ -190,9 +197,57 @@ export function configReducer(config: TimetableConfig, action: Action): Timetabl
         delete next.lessonTypeId;
         delete next.note;
         delete next.daySpan;
+        delete next.split;
+        delete next.secondLessonTypeId;
+        delete next.secondNote;
       } else {
         delete next.blocked;
       }
+      return withCell(config, action.target, next);
+    }
+
+    case 'setCellSplit': {
+      if (!isLessonCellTarget(config, action.target)) return config;
+      const current = getCell(config, action.target.rowId, action.target.dayId);
+      if (current?.blocked) return config;
+      const next: Cell = { ...current };
+      if (action.split) {
+        next.split = true;
+      } else {
+        delete next.split;
+        delete next.secondLessonTypeId;
+        delete next.secondNote;
+      }
+      return withCell(config, action.target, next);
+    }
+
+    case 'placeLessonSecond': {
+      if (!isLessonCellTarget(config, action.target)) return config;
+      const current = getCell(config, action.target.rowId, action.target.dayId);
+      if (current?.blocked) return config;
+      if (!config.lessonTypes.some((type) => type.id === action.lessonTypeId)) return config;
+      return withCell(config, action.target, {
+        ...current,
+        split: true,
+        secondLessonTypeId: action.lessonTypeId,
+      });
+    }
+
+    case 'clearCellSecond': {
+      const current = getCell(config, action.target.rowId, action.target.dayId);
+      if (!current) return config;
+      const next: Cell = { ...current };
+      delete next.secondLessonTypeId;
+      delete next.secondNote;
+      return withCell(config, action.target, next);
+    }
+
+    case 'setCellNoteSecond': {
+      const current = getCell(config, action.target.rowId, action.target.dayId) ?? {};
+      const next: Cell = { ...current };
+      const note = action.note.trim();
+      if (note) next.secondNote = note;
+      else delete next.secondNote;
       return withCell(config, action.target, next);
     }
 
@@ -306,13 +361,22 @@ export function configReducer(config: TimetableConfig, action: Action): Timetabl
       if (lessonTypes.length === config.lessonTypes.length) return config;
       const cells: Record<string, Cell> = {};
       for (const [key, cell] of Object.entries(config.cells)) {
-        if (cell.lessonTypeId !== action.lessonTypeId) {
+        let changed = false;
+        const next: Cell = { ...cell };
+        if (cell.lessonTypeId === action.lessonTypeId) {
+          delete next.lessonTypeId;
+          delete next.note;
+          changed = true;
+        }
+        if (cell.secondLessonTypeId === action.lessonTypeId) {
+          delete next.secondLessonTypeId;
+          delete next.secondNote;
+          changed = true;
+        }
+        if (!changed) {
           cells[key] = cell;
           continue;
         }
-        const next: Cell = { ...cell };
-        delete next.lessonTypeId;
-        delete next.note;
         if (!isEmptyCell(next)) cells[key] = next;
       }
       return { ...config, lessonTypes, cells };

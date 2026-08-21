@@ -179,6 +179,100 @@ describe('Zelleneigenschaften', () => {
   });
 });
 
+describe('geteilte Zellen (1./2. Semester)', () => {
+  it('setzt die zweite Hälfte und aktiviert dabei automatisch die Teilung', () => {
+    const next = apply(sample(), {
+      type: 'placeLessonSecond',
+      target: { rowId: ROW_1, dayId: FR },
+      lessonTypeId: 'lt_if',
+    });
+    expect(getCell(next, ROW_1, FR)).toEqual({ split: true, secondLessonTypeId: 'lt_if' });
+  });
+
+  it('behält die erste Hälfte, wenn nur die zweite gesetzt wird', () => {
+    const next = apply(
+      sample(),
+      { type: 'setCellSplit', target: { rowId: ROW_1, dayId: MO }, split: true },
+      { type: 'placeLessonSecond', target: { rowId: ROW_1, dayId: MO }, lessonTypeId: 'lt_if' },
+    );
+    const cell = getCell(next, ROW_1, MO);
+    expect(cell?.lessonTypeId).toBe('lt_unterricht');
+    expect(cell?.secondLessonTypeId).toBe('lt_if');
+    expect(cell?.split).toBe(true);
+  });
+
+  it('löscht beim Ausschalten der Teilung die zweite Hälfte', () => {
+    const config = apply(
+      sample(),
+      { type: 'placeLessonSecond', target: { rowId: ROW_1, dayId: MO }, lessonTypeId: 'lt_if' },
+      { type: 'setCellNoteSecond', target: { rowId: ROW_1, dayId: MO }, note: 'Halle 2' },
+    );
+    const next = apply(config, { type: 'setCellSplit', target: { rowId: ROW_1, dayId: MO }, split: false });
+    const cell = getCell(next, ROW_1, MO);
+    expect(cell?.split).toBeUndefined();
+    expect(cell?.secondLessonTypeId).toBeUndefined();
+    expect(cell?.secondNote).toBeUndefined();
+    expect(cell?.lessonTypeId).toBe('lt_unterricht');
+  });
+
+  it('leert nur die zweite Hälfte', () => {
+    const config = apply(sample(), {
+      type: 'placeLessonSecond',
+      target: { rowId: ROW_1, dayId: MO },
+      lessonTypeId: 'lt_if',
+    });
+    const next = apply(config, { type: 'clearCellSecond', target: { rowId: ROW_1, dayId: MO } });
+    const cell = getCell(next, ROW_1, MO);
+    expect(cell?.secondLessonTypeId).toBeUndefined();
+    expect(cell?.lessonTypeId).toBe('lt_unterricht');
+    expect(cell?.split).toBe(true);
+  });
+
+  it('lässt gesperrte Zellen unverändert', () => {
+    const config = sample();
+    expect(
+      apply(config, {
+        type: 'setCellSplit',
+        target: { rowId: AFTERNOON_BAND_ROW, dayId: MI },
+        split: true,
+      }),
+    ).toBe(config);
+    expect(
+      apply(config, {
+        type: 'placeLessonSecond',
+        target: { rowId: AFTERNOON_BAND_ROW, dayId: MI },
+        lessonTypeId: 'lt_if',
+      }),
+    ).toBe(config);
+  });
+
+  it('räumt beim Sperren die Teilung mit auf', () => {
+    const config = apply(sample(), {
+      type: 'placeLessonSecond',
+      target: { rowId: ROW_1, dayId: MO },
+      lessonTypeId: 'lt_if',
+    });
+    const next = apply(config, {
+      type: 'setCellBlocked',
+      target: { rowId: ROW_1, dayId: MO },
+      blocked: true,
+    });
+    expect(getCell(next, ROW_1, MO)).toEqual({ blocked: true });
+  });
+
+  it('entfernt eine Lektionsart auch aus der zweiten Hälfte', () => {
+    const config = apply(sample(), {
+      type: 'placeLessonSecond',
+      target: { rowId: ROW_1, dayId: MO },
+      lessonTypeId: 'lt_if',
+    });
+    const next = apply(config, { type: 'removeLessonType', lessonTypeId: 'lt_if' });
+    const cell = getCell(next, ROW_1, MO);
+    expect(cell?.secondLessonTypeId).toBeUndefined();
+    expect(cell?.lessonTypeId).toBe('lt_unterricht');
+  });
+});
+
 describe('Zeilen und Tage', () => {
   it('löscht mit einer Zeile auch deren Zellen', () => {
     const next = apply(sample(), { type: 'removeRow', rowId: ROW_1 });

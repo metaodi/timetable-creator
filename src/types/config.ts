@@ -67,6 +67,12 @@ export interface Cell {
   blocked?: boolean;
   /** Anzahl überdeckter Tagesspalten (>= 2 ergibt ein Band). */
   daySpan?: number;
+  /** Zelle in 1./2. Semester geteilt: links `lessonTypeId`/`note`, rechts die Felder unten. */
+  split?: boolean;
+  /** Lektionsart der zweiten Hälfte (2. Semester), nur wenn `split` gesetzt ist. */
+  secondLessonTypeId?: string;
+  /** Zusatz der zweiten Hälfte (2. Semester). */
+  secondNote?: string;
 }
 
 /** Zusätzliche, manuell gepflegte Legendenzeile. */

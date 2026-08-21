@@ -145,6 +145,11 @@ export function usedLessonTypeIds(config: TimetableConfig): string[] {
         seen.add(id);
         used.push(id);
       }
+      const secondId = entry.cell?.secondLessonTypeId;
+      if (secondId && !seen.has(secondId)) {
+        seen.add(secondId);
+        used.push(secondId);
+      }
     }
   }
   return used;
