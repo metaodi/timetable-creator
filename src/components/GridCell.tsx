@@ -18,11 +18,22 @@ interface GridCellProps {
   cellRef: CellRef;
   cell: Cell | undefined;
   lessonType: LessonType | undefined;
+  secondLessonType: LessonType | undefined;
   colSpan: number;
   editable: boolean;
   selected: boolean;
   ariaLabel: string;
   onSelect: (ref: CellRef) => void;
+}
+
+/** Eine Hälfte einer geteilten Zelle (1. oder 2. Semester). */
+function SplitHalf({ lessonType, note }: { lessonType: LessonType | undefined; note: string | undefined }) {
+  if (!lessonType && !note) return null;
+  return lessonType ? (
+    <LessonChip lessonType={lessonType} note={note} compact />
+  ) : (
+    <span className="grid-cell__note">{note}</span>
+  );
 }
 
 /**
@@ -76,6 +87,7 @@ export function GridCell({
   cellRef,
   cell,
   lessonType,
+  secondLessonType,
   colSpan,
   editable,
   selected,
@@ -83,6 +95,7 @@ export function GridCell({
   onSelect,
 }: GridCellProps) {
   const blocked = cell?.blocked === true;
+  const split = cell?.split === true;
   const { setNodeRef, isOver } = useDroppable({
     id: `${DROP_PREFIX}${cellRef.rowId}|${cellRef.dayId}`,
     data: cellRef,
@@ -99,7 +112,16 @@ export function GridCell({
     .filter(Boolean)
     .join(' ');
 
-  const staticContent = lessonType ? (
+  const staticContent = split ? (
+    <span className="grid-cell__split">
+      <span className="grid-cell__split-half">
+        <SplitHalf lessonType={lessonType} note={cell?.note} />
+      </span>
+      <span className="grid-cell__split-half">
+        <SplitHalf lessonType={secondLessonType} note={cell?.secondNote} />
+      </span>
+    </span>
+  ) : lessonType ? (
     <LessonChip lessonType={lessonType} note={cell?.note} />
   ) : cell?.note ? (
     <span className="grid-cell__note">{cell.note}</span>
@@ -109,6 +131,16 @@ export function GridCell({
     <td ref={setNodeRef} className={className} colSpan={colSpan}>
       {!editable ? (
         staticContent
+      ) : split ? (
+        <button
+          type="button"
+          className="grid-cell__button"
+          aria-label={ariaLabel}
+          aria-pressed={selected}
+          onClick={() => onSelect(cellRef)}
+        >
+          {staticContent}
+        </button>
       ) : lessonType ? (
         <PlacedLesson
           cellRef={cellRef}

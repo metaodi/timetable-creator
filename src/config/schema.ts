@@ -145,6 +145,14 @@ function parseCells(
     const span = typeof value.daySpan === 'number' ? Math.trunc(value.daySpan) : 1;
     if (span > 1) cell.daySpan = span;
 
+    if (value.split === true) cell.split = true;
+    const secondLessonTypeId = optionalStr(value.secondLessonTypeId);
+    if (secondLessonTypeId && lessonTypeIds.has(secondLessonTypeId)) {
+      cell.secondLessonTypeId = secondLessonTypeId;
+    }
+    const secondNote = optionalStr(value.secondNote);
+    if (secondNote) cell.secondNote = secondNote;
+
     if (Object.keys(cell).length === 0) continue;
     cells[cellKey(parsed.rowId, parsed.dayId)] = cell;
   }

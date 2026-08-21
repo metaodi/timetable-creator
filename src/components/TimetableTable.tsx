@@ -49,17 +49,23 @@ export function TimetableTable({ config, editable, selected, onSelect }: Timetab
               </th>
               {rowLayout(config, row.id).map(({ day, cell, colSpan }) => {
                 const lessonType = cell?.lessonTypeId ? typesById.get(cell.lessonTypeId) : undefined;
+                const secondLessonType = cell?.secondLessonTypeId
+                  ? typesById.get(cell.secondLessonTypeId)
+                  : undefined;
                 const isSelected =
                   selected?.rowId === row.id && selected.dayId === day.id;
                 const description = cell?.blocked
                   ? 'kein Unterricht'
-                  : (lessonType?.name ?? 'leer');
+                  : cell?.split
+                    ? `1. Semester: ${lessonType?.name ?? 'leer'}, 2. Semester: ${secondLessonType?.name ?? 'leer'}`
+                    : (lessonType?.name ?? 'leer');
                 return (
                   <GridCell
                     key={day.id}
                     cellRef={{ rowId: row.id, dayId: day.id }}
                     cell={cell}
                     lessonType={lessonType}
+                    secondLessonType={secondLessonType}
                     colSpan={colSpan}
                     editable={editable}
                     selected={isSelected}

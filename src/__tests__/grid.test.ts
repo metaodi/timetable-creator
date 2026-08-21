@@ -157,4 +157,15 @@ describe('usedLessonTypeIds', () => {
     expect(used).not.toContain('lt_if');
     expect(new Set(used).size).toBe(used.length);
   });
+
+  it('berücksichtigt auch die zweite Hälfte geteilter Zellen', () => {
+    const config = sample();
+    config.cells[cellKey(NORMAL_ROW, FR)] = {
+      lessonTypeId: 'lt_unterricht',
+      split: true,
+      secondLessonTypeId: 'lt_if',
+    };
+    const used = usedLessonTypeIds(config);
+    expect(used).toContain('lt_if');
+  });
 });
